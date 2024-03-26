@@ -1,0 +1,181 @@
+//Developed by Zaid ZBAKH
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+
+#define SDA A4
+#define SCL A5
+
+#define Joueur_1_bouton_bas 10   
+#define Joueur_1_bouton_haut 5    
+#define Joueur_2_bouton_bas  2   
+#define Joueur_2_bouton_haut 3     
+
+
+#define LCD_ADDRESS 0x27 
+#define LCD_COLUMNS 20
+#define LCD_ROWS 4
+
+
+#define PADDLE_SIZE 1
+#define BALL_SIZE 0.5
+#define PADDLE_SPEED 1
+#define BALL_SPEED 1.5
+
+
+int paddle1Position = 0; 
+int paddle2Position = 0; 
+int ballPositionX = 0; 
+int ballPositionY = 0; 
+int ballDirectionX = BALL_SPEED; 
+int ballDirectionY = BALL_SPEED; 
+int player1Score = 0; 
+int player2Score = 0;
+
+
+LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
+
+void setup() {
+  
+  lcd.begin(LCD_COLUMNS, LCD_ROWS);
+  lcd.backlight();
+
+  
+  pinMode(Joueur_1_bouton_haut, INPUT_PULLUP);
+  pinMode(Joueur_1_bouton_bas, INPUT_PULLUP);
+  pinMode(Joueur_2_bouton_haut, INPUT_PULLUP);
+  pinMode(Joueur_2_bouton_bas, INPUT_PULLUP);
+
+  
+
+}
+
+void loop() {
+  
+updatePaddles1();
+  updateBall();
+
+  
+  lcd.clear();
+
+  
+  drawPaddles();
+  drawBall();
+
+  
+  updateScoreDisplay();
+
+  
+  delay(150);
+}
+void MovePaddleUp()
+{
+  if (paddle1Position != 0) {
+    paddle1Position -= PADDLE_SPEED;
+  }
+  
+}
+void movepaddle2() {
+ 
+  if (paddle2Position != 0) {
+    paddle2Position -= PADDLE_SPEED;
+  }
+}
+
+void movepaddledown2() {
+ 
+  if (paddle2Position != (LCD_ROWS - PADDLE_SIZE)) {
+    paddle2Position += PADDLE_SPEED;
+  }
+}
+void MovePaddleDown()
+{
+ 
+  if (paddle1Position != (LCD_ROWS - PADDLE_SIZE)) {
+    paddle1Position += PADDLE_SPEED;
+  }
+ 
+}
+void updatePaddles1() {
+
+  if (digitalRead(Joueur_1_bouton_haut) == HIGH) {
+    MovePaddleUp();
+  } else if (digitalRead(Joueur_1_bouton_bas) == HIGH) {
+    MovePaddleDown();
+  }
+
+ 
+
+ 
+  paddle1Position = constrain(paddle1Position, 0, LCD_ROWS - PADDLE_SIZE);
+  paddle2Position = constrain(paddle2Position, 0, LCD_ROWS - PADDLE_SIZE);
+
+  
+ 
+
+if (digitalRead(Joueur_2_bouton_haut) == HIGH) {
+    movepaddle2();
+ } else if (digitalRead(Joueur_2_bouton_bas) == HIGH) {
+    movepaddledown2();
+  }
+ paddle1Position = constrain(paddle1Position, 0, LCD_ROWS - PADDLE_SIZE);
+  paddle2Position = constrain(paddle2Position, 0, LCD_ROWS - PADDLE_SIZE);
+
+
+}
+
+
+void updateBall() {
+
+  ballPositionX += ballDirectionX;
+  ballPositionY += ballDirectionY;
+
+  
+  if (ballPositionX == 1 && ballPositionY >= paddle1Position && ballPositionY <= paddle1Position + PADDLE_SIZE) {
+    ballDirectionX = BALL_SPEED;
+  } else if (ballPositionX == LCD_COLUMNS - BALL_SIZE - 1 && ballPositionY >= paddle2Position && ballPositionY <= paddle2Position + PADDLE_SIZE) {
+    ballDirectionX = -BALL_SPEED; 
+  }
+
+  
+  if (ballPositionX <= 0 || ballPositionX >= LCD_COLUMNS - BALL_SIZE) {
+    
+    if (ballPositionX <= 0) {
+      player2Score++;
+    } else {
+      player1Score++;
+    }
+    ballDirectionX = -ballDirectionX;
+  }
+
+  if (ballPositionY <= 0 || ballPositionY >= LCD_ROWS - BALL_SIZE) {
+    ballDirectionY = -ballDirectionY; 
+  }
+}
+
+void drawPaddles() {
+ 
+  for (int i = 0; i < PADDLE_SIZE; i++) {
+    lcd.setCursor(0, paddle1Position + i);
+    lcd.write(byte(255));
+  }
+
+ 
+  for (int i = 0; i < PADDLE_SIZE; i++) {
+    lcd.setCursor(LCD_COLUMNS - 1, paddle2Position + i);
+    lcd.write(byte(255));
+  }
+}
+
+void drawBall() {
+  lcd.setCursor(ballPositionX, ballPositionY);
+  lcd.write(byte(255));
+}
+
+void updateScoreDisplay() {
+  lcd.setCursor(LCD_COLUMNS / 2 - 2, 0);
+  lcd.print(player1Score);
+  lcd.setCursor(LCD_COLUMNS / 2 + 1, 0);
+  lcd.print(player2Score);
+}
